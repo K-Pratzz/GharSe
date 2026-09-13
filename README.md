@@ -41,10 +41,10 @@ native apps, in-app chat, complex coupons, automated payouts.
 | Layer     | Choice                                            |
 |-----------|----------------------------------------------------|
 | Frontend  | React 18 + Vite + Tailwind CSS, mobile-first       |
-| Backend   | Node.js + Express                                  |
-| Database  | MongoDB + Mongoose                                 |
+| Backend   | Python 3 + FastAPI (Async / High Performance)      |
+| Database  | MongoDB + Motor (Async Driver)                     |
 | Auth      | Email/phone + password, JWT (7-day expiry)         |
-| Images    | Local disk storage via an abstraction (`services/imageStorage.js`) — swap in Cloudinary/S3 later without touching callers |
+| Images    | Local disk storage via an abstraction (`services/image_storage.py`) — swap in Cloudinary/S3 later without touching callers |
 | Location  | User-entered locality + optional lat/lng; Haversine distance calculation; no external maps API required |
 | Payments  | Cash on pickup/delivery or "UPI (marked pending)" — no gateway integration yet, but isolated so Razorpay/Stripe can be added later |
 
@@ -53,22 +53,27 @@ native apps, in-app chat, complex coupons, automated payouts.
 ```
 gharse/
 ├── backend/
-│   ├── config/db.js            Mongo connection
-│   ├── models/                 Mongoose schemas (see below)
-│   ├── controllers/            Business logic per resource
-│   ├── routes/                 Express routers, wired in server.js
-│   ├── middleware/              auth (JWT), role guard, upload, error handler
-│   ├── services/imageStorage.js Image storage abstraction
-│   ├── utils/                  distance.js, jwt.js, orderNumber.js, seed.js
-│   ├── uploads/                 Local image storage (served at /uploads)
-│   ├── server.js                Express app entrypoint
+│   ├── app/
+│   │   ├── config.py                 # Pydantic Settings (.env configuration)
+│   │   ├── database.py               # Motor async MongoDB client & index initialization
+│   │   ├── models/mongo_utils.py     # ObjectId serialization & document formatters
+│   │   ├── schemas/                  # Pydantic v2 schemas (Auth, Food, Order, Seller, etc.)
+│   │   ├── routers/                  # Modular APIRouters (/auth, /foods, /orders, /admin, etc.)
+│   │   ├── middleware/               # Auth dependencies & centralized error handlers
+│   │   ├── services/image_storage.py # Image storage abstraction
+│   │   ├── utils/                    # distance.py, security.py, order_number.py
+│   │   └── main.py                   # FastAPI app factory, CORS, static uploads mount
+│   ├── uploads/                      # Local image storage (served at /uploads)
+│   ├── seed.py                       # Standalone Python seed script for demo data
+│   ├── run.py                        # Dev runner (uvicorn app.main:app --reload --port 5000)
+│   ├── requirements.txt              # Python dependencies
 │   └── .env.example
 └── frontend/
     ├── src/
-    │   ├── api/client.js         Axios instance + JWT header injection
+    │   ├── api/client.js             # Axios instance + JWT header injection
     │   ├── context/AuthContext.jsx
-    │   ├── components/           Navbar, FoodCard, StatusStepper, ProtectedRoute
-    │   └── pages/                One file per screen (see "UI pages" below)
+    │   ├── components/               # Navbar, FoodCard, StatusStepper, ProtectedRoute
+    │   └── pages/                    # One file per screen (see "UI pages" below)
     └── .env.example
 ```
 
@@ -170,17 +175,18 @@ that applied at the time.
 ## Installation
 
 ### Prerequisites
+- Python 3.10+
 - Node.js 18+
 - A MongoDB instance (local `mongod` or a hosted URI e.g. MongoDB Atlas)
 
-### Backend
+### Backend (FastAPI)
 
 ```bash
 cd backend
 cp .env.example .env      # edit MONGO_URI / JWT_SECRET if needed
-npm install
-npm run seed               # populates demo data (safe to re-run)
-npm run dev                 # starts on http://localhost:5000
+pip install -r requirements.txt
+python seed.py            # populates demo data (safe to re-run)
+python run.py             # starts FastAPI dev server on http://localhost:5000
 ```
 
 ### Frontend
