@@ -1,4 +1,11 @@
-node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
 .env
 uploads/*
 !uploads/.gitkeep
+.pytest_cache/
+.coverage
+htmlcov/
+.venv
+venv/
